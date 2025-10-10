@@ -94,15 +94,18 @@ build_vodozemac_ffi() {
         cargo build --release --target=x86_64-apple-darwin
         cargo build --release --target=aarch64-apple-darwin
 
-        mkdir -p ../target/universal-apple-darwin/release
+        # Create the universal library directly in the expected location
+        mkdir -p ../target/release
         lipo -create \
             ../target/x86_64-apple-darwin/release/libvodozemac.a \
             ../target/aarch64-apple-darwin/release/libvodozemac.a \
-            -output ../target/universal-apple-darwin/release/libvodozemac.a
+            -output ../target/release/libvodozemac.a
 
-        # Copy the universal library to the expected location
-        mkdir -p ../target/release
-        cp ../target/universal-apple-darwin/release/libvodozemac.a ../target/release/libvodozemac.a
+        # Copy the generated header to the location SCons expects
+        # The header is arch-independent, so we can just pick one
+        echo -e "${BLUE}Copying CXX-generated header...${NC}"
+        mkdir -p ../target/cxxbridge
+        cp -r ../target/x86_64-apple-darwin/cxxbridge/vodozemac ../target/cxxbridge/
 
         cd ../..
         echo -e "${GREEN}vodozemac-ffi build completed successfully!${NC}"
@@ -124,8 +127,16 @@ check_vodozemac_ffi_cache() {
         lib_path="vodozemac-ffi/target/x86_64-pc-windows-gnu/release/libvodozemac.a"
     fi
 
+    # Also check for the generated cxx header
+    local header_path="vodozemac-ffi/target/cxxbridge/vodozemac/src/lib.rs.h"
+
     if [ ! -f "$lib_path" ]; then
         echo -e "${RED}Cache miss: $lib_path not found${NC}"
+        return 1
+    fi
+
+    if [ ! -f "$header_path" ]; then
+        echo -e "${RED}Cache miss: $header_path not found${NC}"
         return 1
     fi
 

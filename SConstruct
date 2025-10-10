@@ -78,7 +78,12 @@ if platform == 'macos':
     # Add Homebrew OpenSSL lib path for macOS
     env.Append(LIBPATH=['/usr/local/opt/openssl@3/lib']) # Assuming openssl@3 is installed via Homebrew
 
-env.Append(LIBPATH=['godot-cpp/bin', 'vodozemac-ffi/target/release'])
+# Platform-specific library paths
+vodozemac_lib_dir = os.path.join('vodozemac-ffi', 'target', 'release')
+if platform == 'windows' and use_mingw:
+    vodozemac_lib_dir = os.path.join('vodozemac-ffi', 'target', 'x86_64-pc-windows-gnu', 'release')
+
+env.Append(LIBPATH=['godot-cpp/bin', vodozemac_lib_dir])
 
 is_windows = platform == 'windows'
 if is_windows and not use_mingw:
@@ -112,7 +117,10 @@ godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
 env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 
 # vodozemac-ffi library linking
-vodozemac_lib_path = os.path.join('vodozemac-ffi', 'target', 'release', 'libvodozemac.a')
+if platform == 'windows' and use_mingw:
+    vodozemac_lib_path = os.path.join('vodozemac-ffi', 'target', 'x86_64-pc-windows-gnu', 'release', 'libvodozemac.a')
+else:
+    vodozemac_lib_path = os.path.join('vodozemac-ffi', 'target', 'release', 'libvodozemac.a')
 
 if os.path.exists(vodozemac_lib_path):
     env.Append(LIBS=[File(vodozemac_lib_path)])
