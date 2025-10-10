@@ -100,9 +100,9 @@ build_vodozemac_ffi() {
             ../target/aarch64-apple-darwin/release/libvodozemac.a \
             -output ../target/universal-apple-darwin/release/libvodozemac.a
 
-        # Copy the universal library to the expected location and rename it
+        # Copy the universal library to the expected location
         mkdir -p ../target/release
-        cp ../target/universal-apple-darwin/release/libvodozemac.a ../target/release/libvodozemac_ffi.a
+        cp ../target/universal-apple-darwin/release/libvodozemac.a ../target/release/libvodozemac.a
 
         cd ../..
         echo -e "${GREEN}vodozemac-ffi build completed successfully!${NC}"
@@ -110,13 +110,6 @@ build_vodozemac_ffi() {
     fi
 
     cargo build $cargo_flags
-
-    # Rename libvodozemac.a to libvodozemac_ffi.a for consistency with SConstruct
-    if [ "$PLATFORM" == "windows" ]; then
-        cp ../target/x86_64-pc-windows-gnu/release/libvodozemac.a ../target/x86_64-pc-windows-gnu/release/libvodozemac_ffi.a
-    else
-        cp ../target/release/libvodozemac.a ../target/release/libvodozemac_ffi.a
-    fi
 
     cd ../..
     echo -e "${GREEN}vodozemac-ffi build completed successfully!${NC}"
@@ -126,9 +119,9 @@ build_vodozemac_ffi() {
 check_vodozemac_ffi_cache() {
     echo -e "${YELLOW}Checking vodozemac-ffi cache...${NC}"
 
-    local lib_path="vodozemac-ffi/target/release/libvodozemac_ffi.a"
+    local lib_path="vodozemac-ffi/target/release/libvodozemac.a"
     if [ "$PLATFORM" == "windows" ]; then
-        lib_path="vodozemac-ffi/target/x86_64-pc-windows-gnu/release/libvodozemac_ffi.a"
+        lib_path="vodozemac-ffi/target/x86_64-pc-windows-gnu/release/libvodozemac.a"
     fi
 
     if [ ! -f "$lib_path" ]; then

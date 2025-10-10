@@ -13,7 +13,8 @@ config_version=5
 config/name="Godot-Vodozemac Demo"
 config/description="Demo and test project for godot-vodozemac GDExtension"
 config/version="0.1.0"
-config/features=PackedStringArray("4.1", "Forward Plus")
+run/main_scene="uid://d3vbjij1nq614"
+config/features=PackedStringArray("4.5", "Forward Plus")
 
 [editor_plugins]
 

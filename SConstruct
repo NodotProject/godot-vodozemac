@@ -112,7 +112,7 @@ godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
 env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 
 # vodozemac-ffi library linking
-vodozemac_lib_path = os.path.join('vodozemac-ffi', 'target', 'release', 'libvodozemac_ffi.a')
+vodozemac_lib_path = os.path.join('vodozemac-ffi', 'target', 'release', 'libvodozemac.a')
 
 if os.path.exists(vodozemac_lib_path):
     env.Append(LIBS=[File(vodozemac_lib_path)])
@@ -171,7 +171,6 @@ print("SHLIBPREFIX:", env.get('SHLIBPREFIX'))
 print("SHLIBSUFFIX:", env.get('SHLIBSUFFIX'))
 print("Target shared lib will be created as:", env.get('SHLIBPREFIX') + 'godot-vodozemac' + env.get('SHLIBSUFFIX'))
 
-# Create the library with a simple name, SCons will add the correct extension
-library = env.SharedLibrary(target='libgodot-vodozemac', source=src_files)
-installed_library = env.Install('addons/godot-vodozemac/bin', library)
-Default(installed_library)
+# Create the library directly in the addon directory
+library = env.SharedLibrary(target='addons/godot-vodozemac/bin/libgodot-vodozemac', source=src_files)
+Default(library)

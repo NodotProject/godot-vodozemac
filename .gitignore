@@ -30,3 +30,5 @@ _site
 node_modules
 vendor
 addons/gut
+*.zip
+libgodot-vodozemac.so
