@@ -51,10 +51,11 @@ if cache_dir:
 env.Append(CPPPATH=[
     'src',
     '.',
-    'godot-cpp/include', 
-    'godot-cpp/gen/include', 
+    'godot-cpp/include',
+    'godot-cpp/gen/include',
     'godot-cpp/gdextension',
     'vodozemac-ffi/include',
+    'vodozemac-ffi/target/cxxbridge',  # For cxx-generated headers
 ])
 
 # Platform-specific include paths - only add system paths for native builds
