@@ -1,0 +1,127 @@
+name: Build Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-addon:
+    name: Build for ${{ matrix.os-name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            os-name: Linux
+            platform: linux
+            arch: x86_64
+            extension: so
+          - os: ubuntu-latest
+            os-name: Windows
+            platform: windows
+            arch: x86_64
+            extension: dll
+          - os: macos-latest
+            os-name: macOS
+            platform: macos
+            arch: universal
+            extension: dylib
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install SCons
+        run: pip install scons
+
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: ${{ matrix.platform == 'windows' && 'x86_64-pc-windows-gnu' || '' }}
+
+      - name: Install dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Install dependencies (Windows cross-compile)
+        if: matrix.platform == 'windows'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64
+
+      - name: Install dependencies (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          # Dependencies are generally available on macOS runners
+          echo "No special dependencies needed for macOS"
+
+      - name: Build GDExtension
+        run: ./build_local.sh ${{ matrix.platform }}
+
+      - name: Package addon
+        run: |
+          mkdir -p package/addons/godot-vodozemac
+          cp -r addons/godot-vodozemac/* package/addons/godot-vodozemac/
+          cd package
+          zip -r ../godot-vodozemac-${{ matrix.platform }}-${{ matrix.arch }}.zip .
+          cd ..
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-vodozemac-${{ matrix.platform }}-${{ matrix.arch }}
+          path: godot-vodozemac-${{ matrix.platform }}-${{ matrix.arch }}.zip
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-addon]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Combine builds into a single package
+        run: |
+          mkdir -p release_package/addons/godot-vodozemac/bin
+          
+          # Unzip Linux build first to get the base structure
+          unzip artifacts/godot-vodozemac-linux-x86_64/godot-vodozemac-linux-x86_64.zip -d release_package
+          
+          # Unzip and copy binaries from other builds
+          unzip artifacts/godot-vodozemac-windows-x86_64/godot-vodozemac-windows-x86_64.zip -d temp_windows
+          cp temp_windows/addons/godot-vodozemac/bin/*.dll release_package/addons/godot-vodozemac/bin/
+          
+          unzip artifacts/godot-vodozemac-macos-universal/godot-vodozemac-macos-universal.zip -d temp_macos
+          cp temp_macos/addons/godot-vodozemac/bin/*.dylib release_package/addons/godot-vodozemac/bin/
+          
+          cd release_package
+          zip -r ../godot-vodozemac-release.zip .
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: godot-vodozemac-release.zip
+          name: godot-vodozemac-${{ github.ref_name }}.zip

@@ -1,0 +1,11 @@
+[configuration]
+
+entry_symbol = "vodozemac_library_init"
+compatibility_minimum = "4.1"
+
+[libraries]
+
+linux.x86_64 = "res://addons/godot-vodozemac/bin/libgodot-vodozemac.so"
+windows.x86_64 = "res://addons/godot-vodozemac/bin/libgodot-vodozemac.dll"
+macos.x86_64 = "res://addons/godot-vodozemac/bin/libgodot-vodozemac.dylib"
+macos.arm64 = "res://addons/godot-vodozemac/bin/libgodot-vodozemac.dylib"

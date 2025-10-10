@@ -1,0 +1,78 @@
+name: Build and Test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+
+    - name: Install SCons
+      run: pip install scons
+
+    - name: Set up Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential scons
+
+    - name: Download Godot 4 Headless
+      run: |
+        wget https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_linux.x86_64.zip
+        unzip Godot_v4.2.2-stable_linux.x86_64.zip
+        mv Godot_v4.2.2-stable_linux.x86_64 godot
+        chmod +x godot
+
+    - name: Cache vodozemac-ffi build
+      uses: actions/cache@v4
+      id: cache-vodozemac-ffi
+      with:
+        path: vodozemac-ffi/target
+        key: ${{ runner.os }}-vodozemac-ffi-${{ hashFiles('vodozemac-ffi/cpp/Cargo.toml', 'vodozemac-ffi/cpp/src/**') }}
+
+    - name: Build vodozemac-ffi
+      if: steps.cache-vodozemac-ffi.outputs.cache-hit != 'true'
+      run: ./build_local.sh linux
+
+    - name: Cache godot-cpp build
+      uses: actions/cache@v4
+      id: cache-godot-cpp
+      with:
+        path: |
+          godot-cpp/bin
+          godot-cpp/gen
+          godot-cpp/.sconsign.dblite
+        key: ${{ runner.os }}-godot-cpp-linux-x86_64-${{ hashFiles('godot-cpp/SConstruct', 'godot-cpp/gdextension/extension_api.json') }}
+
+    - name: Build godot-cpp bindings
+      if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
+      run: |
+        cd godot-cpp
+        scons platform=linux generate_bindings=yes target=template_release
+        scons platform=linux generate_bindings=yes target=template_debug
+
+    - name: Compile GDExtension
+      run: scons platform=linux target=template_release
+
+    - name: Run GUT tests
+      run: |
+        # Import the project first
+        timeout 30s ./godot --headless --import || true
+        # Run the tests
+        ./run_tests.sh

@@ -1,0 +1,32 @@
+# Godot 4
+.godot/
+.import/
+
+# Mono/CS
+.mono/
+mono_crash.*.json
+
+# OS/IDE noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.user
+*.dblite
+*.log
+
+# Build artifacts
+*.os
+*.a
+*.lib
+*.exe
+/*.json
+.ai/
+.claude/
+.sconf_temp
+.bundle
+.jekyll-cache
+_site
+node_modules
+vendor
+addons/gut
