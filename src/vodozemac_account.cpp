@@ -1,4 +1,5 @@
 #include "vodozemac_account.h"
+#include "vodozemac_session.h"
 #include "godot_cpp/core/class_db.hpp"
 #include "vodozemac/src/lib.rs.h"
 #include <array>
@@ -18,6 +19,12 @@ void VodozemacAccount::_bind_methods() {
     // Persistence (Phase 3)
     ClassDB::bind_method(D_METHOD("pickle", "key"), &VodozemacAccount::pickle);
     ClassDB::bind_method(D_METHOD("from_pickle", "pickle_str", "key"), &VodozemacAccount::from_pickle);
+
+    // Session creation (Phase 4)
+    ClassDB::bind_method(D_METHOD("create_outbound_session", "identity_key_base64", "one_time_key_base64"),
+                        &VodozemacAccount::create_outbound_session);
+    ClassDB::bind_method(D_METHOD("create_inbound_session", "identity_key_base64", "message_type", "ciphertext"),
+                        &VodozemacAccount::create_inbound_session);
 
     // Error handling
     ClassDB::bind_method(D_METHOD("get_last_error"), &VodozemacAccount::get_last_error);
@@ -202,4 +209,95 @@ Error VodozemacAccount::from_pickle(const String& pickle_str, const PackedByteAr
 
 String VodozemacAccount::get_last_error() const {
     return last_error;
+}
+
+// Phase 4: Session creation
+Ref<VodozemacSession> VodozemacAccount::create_outbound_session(const String& identity_key_base64,
+                                                                 const String& one_time_key_base64) {
+    Ref<VodozemacSession> session_ref;
+    session_ref.instantiate();
+
+    if (!account) {
+        last_error = "Account not initialized";
+        return session_ref;
+    }
+
+    try {
+        // Convert strings to rust::Str
+        CharString identity_cstr = identity_key_base64.utf8();
+        rust::Str identity_rust(identity_cstr.get_data(), identity_cstr.length());
+
+        CharString otk_cstr = one_time_key_base64.utf8();
+        rust::Str otk_rust(otk_cstr.get_data(), otk_cstr.length());
+
+        // Parse keys from base64
+        auto identity_key = types::curve_key_from_base64(identity_rust);
+        auto one_time_key = types::curve_key_from_base64(otk_rust);
+
+        // Create outbound session
+        auto session_box = (*account)->create_outbound_session(*identity_key, *one_time_key);
+
+        // Store session in VodozemacSession object using friend access
+        session_ref->_set_session(new rust::Box<olm::Session>(std::move(session_box)));
+        last_error = "";
+
+        return session_ref;
+
+    } catch (const std::exception& e) {
+        last_error = String(e.what());
+        return session_ref;
+    }
+}
+
+Dictionary VodozemacAccount::create_inbound_session(const String& identity_key_base64,
+                                                    int message_type,
+                                                    const String& ciphertext) {
+    Dictionary result;
+    result["success"] = false;
+    result["session"] = Ref<VodozemacSession>();
+    result["plaintext"] = "";
+
+    if (!account) {
+        last_error = "Account not initialized";
+        result["error"] = last_error;
+        return result;
+    }
+
+    try {
+        // Convert strings to rust::Str
+        CharString identity_cstr = identity_key_base64.utf8();
+        rust::Str identity_rust(identity_cstr.get_data(), identity_cstr.length());
+
+        // Parse identity key from base64
+        auto identity_key = types::curve_key_from_base64(identity_rust);
+
+        // Create OlmMessage from parts
+        olm::OlmMessageParts parts;
+        parts.message_type = message_type;
+        CharString cipher_cstr = ciphertext.utf8();
+        parts.ciphertext = rust::String(std::string(cipher_cstr.get_data()));
+
+        auto olm_message = olm::olm_message_from_parts(parts);
+
+        // Create inbound session
+        auto inbound_result = (*account)->create_inbound_session(*identity_key, *olm_message);
+
+        // Create session object
+        Ref<VodozemacSession> session_ref;
+        session_ref.instantiate();
+
+        // Store session using friend access
+        session_ref->_set_session(new rust::Box<olm::Session>(std::move(inbound_result.session)));
+
+        result["success"] = true;
+        result["session"] = session_ref;
+        result["plaintext"] = String(std::string(inbound_result.plaintext).c_str());
+        last_error = "";
+
+    } catch (const std::exception& e) {
+        last_error = String(e.what());
+        result["error"] = last_error;
+    }
+
+    return result;
 }

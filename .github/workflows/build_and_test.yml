@@ -1,78 +1,243 @@
 name: Build and Test
+
 on:
   push:
+    branches: [ main, develop ]
   pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
+env:
+  GODOT_VERSION: "4.1.3"
+  SCONS_CACHE_LIMIT: 7168
+
 jobs:
-  build-and-test:
+  # Static analysis and formatting checks
+  static-analysis:
     runs-on: ubuntu-latest
+    name: Static Analysis
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.x"
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
 
-    - name: Install SCons
-      run: pip install scons
+      - name: Run Clippy
+        run: |
+          cd vodozemac-ffi/cpp
+          cargo clippy -- -D warnings
 
-    - name: Set up Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
+      - name: Check formatting
+        run: |
+          cd vodozemac-ffi/cpp
+          cargo fmt -- --check
 
-    - name: Install build dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential scons
+  # Rust unit tests
+  rust-tests:
+    runs-on: ubuntu-latest
+    name: Rust Unit Tests
 
-    - name: Download Godot 4 Headless
-      run: |
-        wget https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_linux.x86_64.zip
-        unzip Godot_v4.2.2-stable_linux.x86_64.zip
-        mv Godot_v4.2.2-stable_linux.x86_64 godot
-        chmod +x godot
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Cache vodozemac-ffi build
-      uses: actions/cache@v4
-      id: cache-vodozemac-ffi
-      with:
-        path: vodozemac-ffi/target
-        key: ${{ runner.os }}-vodozemac-ffi-${{ hashFiles('vodozemac-ffi/cpp/Cargo.toml', 'vodozemac-ffi/cpp/src/**') }}
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Build vodozemac-ffi
-      if: steps.cache-vodozemac-ffi.outputs.cache-hit != 'true'
-      run: ./build_local.sh linux
+      - name: Setup Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            vodozemac-ffi/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
-    - name: Cache godot-cpp build
-      uses: actions/cache@v4
-      id: cache-godot-cpp
-      with:
-        path: |
-          godot-cpp/bin
-          godot-cpp/gen
-          godot-cpp/.sconsign.dblite
-        key: ${{ runner.os }}-godot-cpp-linux-x86_64-${{ hashFiles('godot-cpp/SConstruct', 'godot-cpp/gdextension/extension_api.json') }}
+      - name: Run Rust tests
+        run: |
+          cd vodozemac-ffi/cpp
+          cargo test --verbose
 
-    - name: Build godot-cpp bindings
-      if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
-      run: |
-        cd godot-cpp
-        scons platform=linux generate_bindings=yes target=template_release
-        scons platform=linux generate_bindings=yes target=template_debug
+  # Build for Linux
+  build-linux:
+    runs-on: ubuntu-latest
+    name: Build Linux (x86_64)
+    needs: [static-analysis, rust-tests]
 
-    - name: Compile GDExtension
-      run: scons platform=linux target=template_release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Run GUT tests
-      run: |
-        # Import the project first
-        timeout 30s ./godot --headless --import || true
-        # Run the tests
-        ./run_tests.sh
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential scons pkg-config libssl-dev clang
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup SCons cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/.scons-cache/
+            ~/.cargo/registry
+            ~/.cargo/git
+            vodozemac-ffi/target
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-scons-
+
+      - name: Build vodozemac-ffi
+        run: |
+          cd vodozemac-ffi/cpp
+          cargo build --release
+          cd ../..
+
+      - name: Build godot-cpp
+        run: |
+          cd godot-cpp
+          scons platform=linux target=template_release -j$(nproc)
+          cd ..
+
+      - name: Build GDExtension
+        run: |
+          scons platform=linux target=template_release -j$(nproc)
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libgodot-vodozemac-linux-x86_64
+          path: addons/godot-vodozemac/bin/libgodot-vodozemac.so
+          retention-days: 7
+
+  # GDScript integration tests
+  gdscript-tests:
+    runs-on: ubuntu-latest
+    name: GDScript Integration Tests
+    needs: build-linux
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential scons pkg-config libssl-dev clang \
+            libx11-dev libxcursor-dev libxinerama-dev libgl1-mesa-dev \
+            libglu1-mesa-dev libasound2-dev libpulse-dev libudev-dev \
+            libxi-dev libxrandr-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/.scons-cache/
+            ~/.cargo/registry
+            ~/.cargo/git
+            vodozemac-ffi/target
+          key: ${{ runner.os }}-build-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - name: Download Godot
+        run: |
+          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          unzip Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          chmod +x Godot_v${GODOT_VERSION}-stable_linux.x86_64
+          mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot || sudo mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot
+
+      - name: Build vodozemac-ffi
+        run: |
+          cd vodozemac-ffi/cpp
+          cargo build --release
+          cd ../..
+
+      - name: Build godot-cpp
+        run: |
+          cd godot-cpp
+          scons platform=linux target=template_release -j$(nproc)
+          cd ..
+
+      - name: Build GDExtension
+        run: |
+          scons platform=linux target=template_release -j$(nproc)
+
+      - name: Import project
+        run: |
+          timeout 60 godot --headless --editor --quit || true
+
+      - name: Run GUT tests
+        run: |
+          godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/integration -gexit
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            .gut/
+            *.log
+          retention-days: 7
+
+  # Optional: Memory leak detection with Valgrind
+  memory-check:
+    runs-on: ubuntu-latest
+    name: Memory Leak Check (Valgrind)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind build-essential scons pkg-config libssl-dev clang
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build with debug symbols
+        run: |
+          cd vodozemac-ffi/cpp
+          cargo build
+          cd ../..
+
+      - name: Run Valgrind tests
+        run: |
+          cd vodozemac-ffi/cpp
+          cargo test --no-run
+          valgrind --leak-check=full --error-exitcode=1 \
+            $(find target/debug/deps -maxdepth 1 -executable -type f | head -1) || true

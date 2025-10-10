@@ -9,6 +9,9 @@
 
 namespace godot {
 
+// Forward declaration
+class VodozemacSession;
+
 class VodozemacAccount : public RefCounted {
     GDCLASS(VodozemacAccount, RefCounted);
 
@@ -34,6 +37,13 @@ public:
     // Persistence (Phase 3)
     String pickle(const PackedByteArray& key);
     Error from_pickle(const String& pickle_str, const PackedByteArray& key);
+
+    // Session creation (Phase 4) - these will be called by VodozemacSession
+    Ref<VodozemacSession> create_outbound_session(const String& identity_key_base64,
+                                                   const String& one_time_key_base64);
+    Dictionary create_inbound_session(const String& identity_key_base64,
+                                     int message_type,
+                                     const String& ciphertext);
 
     // Error handling
     String get_last_error() const;
