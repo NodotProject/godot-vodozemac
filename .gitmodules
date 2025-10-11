@@ -1,6 +1,7 @@
 [submodule "godot-cpp"]
 	path = godot-cpp
 	url = https://github.com/godotengine/godot-cpp
+	branch = godot-4.5
 [submodule "vodozemac-ffi"]
 	path = vodozemac-ffi
 	url = https://github.com/matrix-org/vodozemac-bindings.git
