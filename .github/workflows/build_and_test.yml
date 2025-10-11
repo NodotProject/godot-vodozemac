@@ -9,6 +9,7 @@ on:
 
 env:
   GODOT_VERSION: "4.5"
+  GODOT_VERSION_FULL: "4.5.0"
   SCONS_CACHE_LIMIT: 7168
 
 jobs:
@@ -171,7 +172,7 @@ jobs:
       - name: Install Godot
         uses: chickensoft-games/setup-godot@v2
         with:
-          version: ${{ env.GODOT_VERSION }}
+          version: ${{ env.GODOT_VERSION_FULL }}
           use-dotnet: false
           include-templates: false
 
