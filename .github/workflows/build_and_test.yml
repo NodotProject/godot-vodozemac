@@ -192,7 +192,7 @@ jobs:
 
       - name: Import project
         run: |
-          timeout 60 godot --headless --editor --quit || true
+          timeout 60 godot --headless --import --quit || true
 
       - name: Run GUT tests
         run: |
