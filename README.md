@@ -178,11 +178,6 @@ cd godot-vodozemac
 - [Godot Engine](https://godotengine.org/) community
 - The Signal Protocol team for the original Double Ratchet design
 
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/NodotProject/godot-vodozemac/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/NodotProject/godot-vodozemac/discussions)
-
 ## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
