@@ -168,6 +168,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build-
 
+      - name: Install Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: false
+
       - name: Install GUT
         run: |
           git clone https://github.com/bitwes/Gut.git gut_temp

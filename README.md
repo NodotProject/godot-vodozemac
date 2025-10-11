@@ -1,7 +1,7 @@
 # Godot-Vodozemac
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Godot Engine](https://img.shields.io/badge/Godot-4.1+-blue.svg)](https://godotengine.org/)
+[![Godot Engine](https://img.shields.io/badge/Godot-4.5+-blue.svg)](https://godotengine.org/)
 
 **End-to-end encryption for Godot using the Matrix.org Olm protocol**
 
@@ -9,7 +9,7 @@ Godot-Vodozemac is a GDExtension that brings battle-tested end-to-end encryption
 
 ## 📋 Requirements
 
-- **Godot Engine** 4.1 or later
+- **Godot Engine** 4.5 or later
 - **Platforms**: Linux (x86_64), Windows (x86_64), macOS (x86_64, ARM64)
 - For building from source:
   - Python 3.6+
@@ -30,14 +30,22 @@ Godot-Vodozemac is a GDExtension that brings battle-tested end-to-end encryption
 #### Option 2: Build from Source
 
 ```bash
-# Clone the repository with submodules
-git clone --recursive https://github.com/NodotProject/godot-vodozemac.git
+# 1. Clone the repository
+git clone https://github.com/NodotProject/godot-vodozemac.git
 cd godot-vodozemac
 
-# Build the extension
+# 2. Initialize submodules
+git submodule update --init --recursive
+
+# 3. Install the GUT testing addon (for running tests)
+git clone https://github.com/bitwes/Gut.git gut_temp
+mv gut_temp/addons/gut addons/
+rm -rf gut_temp
+
+# 4. Build the extension
 ./build_local.sh
 
-# Copy the addon to your project
+# 5. Copy the addon to your project
 cp -r addons/godot-vodozemac /path/to/your/project/addons/
 ```
 
@@ -130,21 +138,27 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ### Build Steps
 
 ```bash
-# 1. Clone with submodules
-git clone --recursive https://github.com/NodotProject/godot-vodozemac.git
+# 1. Clone the repository and initialize submodules
+git clone https://github.com/NodotProject/godot-vodozemac.git
 cd godot-vodozemac
+git submodule update --init --recursive
 
-# 2. Build vodozemac-ffi (Rust)
+# 2. Install the GUT addon (optional, for tests)
+git clone https://github.com/bitwes/Gut.git gut_temp
+mv gut_temp/addons/gut addons/
+rm -rf gut_temp
+
+# 3. Build vodozemac-ffi (Rust)
 cd vodozemac-ffi/cpp
 cargo build --release
 cd ../..
 
-# 3. Build godot-cpp
+# 4. Build godot-cpp
 cd godot-cpp
 scons platform=linux target=template_release
 cd ..
 
-# 4. Build the GDExtension
+# 5. Build the GDExtension
 scons platform=linux target=template_release
 
 # The binary will be in addons/godot-vodozemac/bin/
@@ -153,14 +167,20 @@ scons platform=linux target=template_release
 ### Development Setup
 
 ```bash
-# Clone and setup
-git clone --recursive https://github.com/NodotProject/godot-vodozemac.git
+# 1. Clone and setup submodules
+git clone https://github.com/NodotProject/godot-vodozemac.git
 cd godot-vodozemac
+git submodule update --init --recursive
 
-# Build for development
+# 2. Install GUT
+git clone https://github.com/bitwes/Gut.git gut_temp
+mv gut_temp/addons/gut addons/
+rm -rf gut_temp
+
+# 3. Build for development
 ./build_local.sh
 
-# Run tests
+# 4. Run tests
 ./run_tests.sh
 ```
 
