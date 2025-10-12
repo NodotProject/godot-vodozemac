@@ -130,6 +130,15 @@ jobs:
           path: addons/godot-vodozemac/bin/libgodot-vodozemac.so
           retention-days: 7
 
+      - name: Upload build dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-dependencies-linux
+          path: |
+            godot-cpp/bin/
+            vodozemac-ffi/target/release/libvodozemac.a
+          retention-days: 7
+
   # GDScript integration tests
   gdscript-tests:
     runs-on: ubuntu-latest
@@ -184,17 +193,18 @@ jobs:
           mv gut_temp/addons/gut addons/
           rm -rf gut_temp
 
-      - name: Build vodozemac-ffi
-        run: |
-          cd vodozemac-ffi/cpp
-          cargo build --release
-          cd ../..
+      - name: Download build dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dependencies-linux
+          path: build-deps
 
-      - name: Build godot-cpp
+      - name: Restore build dependencies to correct paths
         run: |
-          cd godot-cpp
-          scons platform=linux target=template_release -j$(nproc)
-          cd ..
+          mkdir -p godot-cpp/bin
+          mkdir -p vodozemac-ffi/target/release
+          cp -r build-deps/godot-cpp/bin/* godot-cpp/bin/
+          cp build-deps/vodozemac-ffi/target/release/libvodozemac.a vodozemac-ffi/target/release/
 
       - name: Build GDExtension
         run: |
