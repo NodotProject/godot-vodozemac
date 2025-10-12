@@ -5,6 +5,8 @@
 
 #include "vodozemac_account.h"
 #include "vodozemac_session.h"
+#include "vodozemac_group_session.h"
+#include "vodozemac_inbound_group_session.h"
 
 using namespace godot;
 
@@ -15,6 +17,8 @@ void initialize_vodozemac_module(ModuleInitializationLevel p_level) {
 
     ClassDB::register_class<VodozemacAccount>();
     ClassDB::register_class<VodozemacSession>();
+    ClassDB::register_class<VodozemacGroupSession>();
+    ClassDB::register_class<VodozemacInboundGroupSession>();
 }
 
 void uninitialize_vodozemac_module(ModuleInitializationLevel p_level) {

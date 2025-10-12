@@ -6,6 +6,8 @@ Complete API documentation for godot-vodozemac GDExtension.
 
 - [VodozemacAccount](#vodozemacaccount)
 - [VodozemacSession](#vodozemacsession)
+- [VodozemacGroupSession](#vodozemacgroupsession)
+- [VodozemacInboundGroupSession](#vodozemacinboundgroupsession)
 - [Data Types](#data-types)
 - [Error Handling](#error-handling)
 
@@ -431,6 +433,423 @@ if not result["success"]:
 
 ---
 
+## VodozemacGroupSession
+
+The `VodozemacGroupSession` class represents an outbound group session for encrypting messages to multiple recipients using the Megolm ratchet.
+
+### Overview
+
+Group sessions enable efficient group messaging where a single encrypted message can be sent to multiple recipients. The sender creates one `VodozemacGroupSession` and shares the session key with all recipients, who each create their own `VodozemacInboundGroupSession`.
+
+### Methods
+
+#### `initialize() -> Error`
+
+Creates a new group session with freshly generated keys and ratchet state.
+
+**Returns:**
+- `OK` (0) on success
+- `FAILED` on error
+
+**Example:**
+```gdscript
+var group_session = VodozemacGroupSession.new()
+if group_session.initialize() != OK:
+    push_error("Failed to initialize: " + group_session.get_last_error())
+```
+
+**Notes:**
+- Must be called before any other operations
+- Generates a new session ID and session key
+- Initializes the message index to 0
+
+---
+
+#### `get_session_id() -> String`
+
+Returns the unique identifier for this group session.
+
+**Returns:**
+Base64-encoded session ID string
+
+**Example:**
+```gdscript
+var session_id = group_session.get_session_id()
+print("Group session ID: ", session_id)
+```
+
+**Notes:**
+- Session IDs are deterministic and unique
+- All recipients with the same session key will have the same session ID
+- Can be used to verify that all participants are in the same group
+
+---
+
+#### `encrypt(plaintext: String) -> Dictionary`
+
+Encrypts a message for the group.
+
+**Parameters:**
+- `plaintext` (String): The message to encrypt
+
+**Returns:**
+Dictionary with the following keys:
+- `"success"` (bool): Whether encryption succeeded
+- `"ciphertext"` (String): Base64-encoded encrypted message
+- `"error"` (String): Error message (if failed)
+
+**Example:**
+```gdscript
+var result = group_session.encrypt("Hello everyone!")
+if result["success"]:
+    # Broadcast result["ciphertext"] to all group members
+    broadcast_to_group(result["ciphertext"])
+else:
+    push_error("Encryption failed: " + result["error"])
+```
+
+**Notes:**
+- Each encryption increments the message index
+- The same ciphertext can be sent to all recipients
+- Much more efficient than encrypting individually for each recipient
+
+---
+
+#### `get_session_key() -> String`
+
+Returns the session key that recipients need to decrypt messages.
+
+**Returns:**
+Base64-encoded session key
+
+**Example:**
+```gdscript
+var session_key = group_session.get_session_key()
+# Distribute this key securely to all group members
+# (e.g., via Olm 1:1 sessions)
+```
+
+**Security Notes:**
+- ⚠️ This key must be distributed securely (e.g., via Olm encrypted channels)
+- Anyone with this key can decrypt all past and future messages
+- Never send session keys in plaintext
+- Consider rotating keys regularly
+
+---
+
+#### `get_message_index() -> int`
+
+Returns the current ratchet index (number of messages encrypted).
+
+**Returns:**
+Current message index (starts at 0)
+
+**Example:**
+```gdscript
+var index = group_session.get_message_index()
+print("Messages sent: ", index)
+```
+
+**Notes:**
+- Increments after each `encrypt()` call
+- Recipients use this to verify message ordering
+- Can be used to detect missing messages
+
+---
+
+#### `pickle(key: PackedByteArray) -> String`
+
+Serializes the group session for persistence.
+
+**Parameters:**
+- `key` (PackedByteArray): 32-byte encryption key
+
+**Returns:**
+Base64-encoded encrypted pickle string
+
+**Example:**
+```gdscript
+var pickle_key = PackedByteArray()
+pickle_key.resize(32)
+# ... fill with secure random bytes ...
+
+var pickle = group_session.pickle(pickle_key)
+save_to_file("user://group_session.pickle", pickle)
+```
+
+**Notes:**
+- Key MUST be exactly 32 bytes
+- Preserves session state including message index
+- Can continue encrypting after unpickling
+
+---
+
+#### `from_pickle(pickle: String, key: PackedByteArray) -> Error`
+
+Restores a group session from a pickle.
+
+**Parameters:**
+- `pickle` (String): Base64-encoded encrypted pickle
+- `key` (PackedByteArray): 32-byte decryption key (same as used for pickling)
+
+**Returns:**
+- `OK` on success
+- `FAILED` on error
+
+**Example:**
+```gdscript
+var pickle = load_from_file("user://group_session.pickle")
+var group_session = VodozemacGroupSession.new()
+if group_session.from_pickle(pickle, pickle_key) != OK:
+    push_error("Failed to restore: " + group_session.get_last_error())
+```
+
+---
+
+#### `get_last_error() -> String`
+
+Returns the last error message for this group session.
+
+**Returns:**
+Error message string (empty if no error)
+
+**Example:**
+```gdscript
+if group_session.initialize() != OK:
+    print("Error: ", group_session.get_last_error())
+```
+
+---
+
+## VodozemacInboundGroupSession
+
+The `VodozemacInboundGroupSession` class represents an inbound group session for decrypting messages from a group sender.
+
+### Overview
+
+Recipients use inbound group sessions to decrypt messages encrypted by a `VodozemacGroupSession`. Multiple recipients can use the same session key, and each maintains their own inbound session independently.
+
+### Methods
+
+#### `initialize_from_session_key(session_key: String) -> Error`
+
+Creates an inbound session from a session key provided by the sender.
+
+**Parameters:**
+- `session_key` (String): Base64-encoded session key from the sender
+
+**Returns:**
+- `OK` on success
+- `FAILED` on error
+
+**Example:**
+```gdscript
+var inbound_session = VodozemacInboundGroupSession.new()
+if inbound_session.initialize_from_session_key(session_key) != OK:
+    push_error("Failed to join group: " + inbound_session.get_last_error())
+```
+
+**Notes:**
+- Session key must be received securely from the sender
+- Creates a full session that can decrypt from message index 0
+- All recipients share the same session key
+
+---
+
+#### `import_session(exported_key: String) -> Error`
+
+Imports a session that was exported at a specific message index (for late joiners).
+
+**Parameters:**
+- `exported_key` (String): Base64-encoded exported session key
+
+**Returns:**
+- `OK` on success
+- `FAILED` on error
+
+**Example:**
+```gdscript
+# Charlie joins late, Bob exports the session for him
+var export_result = bob_session.export_at_index(current_index)
+
+var charlie_session = VodozemacInboundGroupSession.new()
+if charlie_session.import_session(export_result["exported_key"]) != OK:
+    push_error("Failed to import: " + charlie_session.get_last_error())
+```
+
+**Use Cases:**
+- New members joining an existing group
+- Limiting access to message history for privacy
+- Key rotation without sharing full history
+
+**Notes:**
+- Imported sessions can only decrypt messages from the export index forward
+- Cannot decrypt messages sent before the export point
+- Use `get_first_known_index()` to check the earliest decryptable message
+
+---
+
+#### `get_session_id() -> String`
+
+Returns the session identifier.
+
+**Returns:**
+Base64-encoded session ID string
+
+**Example:**
+```gdscript
+var session_id = inbound_session.get_session_id()
+# Should match the sender's session ID
+```
+
+**Notes:**
+- Must match the sender's session ID
+- Can be used to verify all participants are in the same group
+
+---
+
+#### `decrypt(ciphertext: String) -> Dictionary`
+
+Decrypts a group message.
+
+**Parameters:**
+- `ciphertext` (String): Base64-encoded encrypted message
+
+**Returns:**
+Dictionary with the following keys:
+- `"success"` (bool): Whether decryption succeeded
+- `"plaintext"` (String): The decrypted message (if successful)
+- `"message_index"` (int): The message's index in the ratchet
+- `"error"` (String): Error message (if failed)
+
+**Example:**
+```gdscript
+var result = inbound_session.decrypt(ciphertext)
+if result["success"]:
+    print("[%d] %s" % [result["message_index"], result["plaintext"]])
+else:
+    push_error("Decryption failed: " + result["error"])
+```
+
+**Notes:**
+- Messages can be decrypted out of order
+- Message index helps with ordering and detecting duplicates/gaps
+- Each ciphertext can only be decrypted once per session
+
+---
+
+#### `get_first_known_index() -> int`
+
+Returns the earliest message index this session can decrypt.
+
+**Returns:**
+First known index (0 for full sessions, higher for imported sessions)
+
+**Example:**
+```gdscript
+var first_index = inbound_session.get_first_known_index()
+if first_index > 0:
+    print("This session can only decrypt messages from index ", first_index, " onwards")
+```
+
+**Notes:**
+- Returns 0 for sessions created with `initialize_from_session_key()`
+- Returns the export index for sessions created with `import_session()`
+- Useful for determining message history visibility
+
+---
+
+#### `export_at_index(message_index: int) -> Dictionary`
+
+Exports the session state at a specific message index for sharing with new members.
+
+**Parameters:**
+- `message_index` (int): The index to export from
+
+**Returns:**
+Dictionary with the following keys:
+- `"success"` (bool): Whether export succeeded
+- `"exported_key"` (String): Base64-encoded exported session key (if successful)
+- `"error"` (String): Error message (if failed)
+
+**Example:**
+```gdscript
+# Export for a late joiner at current message index
+var current_index = sender.get_message_index()
+var export_result = inbound_session.export_at_index(current_index)
+
+if export_result["success"]:
+    # Send exported_key to new member via secure channel
+    send_to_new_member(export_result["exported_key"])
+```
+
+**Use Cases:**
+- Onboarding new group members
+- Key rotation
+- Limiting message history access
+
+**Security Notes:**
+- Exported keys grant access to messages from the export point forward
+- Only export to trusted parties
+- Consider group policy for who can export sessions
+
+---
+
+#### `pickle(key: PackedByteArray) -> String`
+
+Serializes the inbound group session for persistence.
+
+**Parameters:**
+- `key` (PackedByteArray): 32-byte encryption key
+
+**Returns:**
+Base64-encoded encrypted pickle string
+
+**Example:**
+```gdscript
+var pickle = inbound_session.pickle(pickle_key)
+save_to_file("user://inbound_session.pickle", pickle)
+```
+
+---
+
+#### `from_pickle(pickle: String, key: PackedByteArray) -> Error`
+
+Restores an inbound group session from a pickle.
+
+**Parameters:**
+- `pickle` (String): Encrypted pickle string
+- `key` (PackedByteArray): 32-byte decryption key
+
+**Returns:**
+- `OK` on success
+- `FAILED` on error
+
+**Example:**
+```gdscript
+var pickle = load_from_file("user://inbound_session.pickle")
+var inbound_session = VodozemacInboundGroupSession.new()
+if inbound_session.from_pickle(pickle, pickle_key) != OK:
+    push_error("Failed to restore: " + inbound_session.get_last_error())
+```
+
+---
+
+#### `get_last_error() -> String`
+
+Returns the last error message for this inbound group session.
+
+**Returns:**
+Error message string
+
+**Example:**
+```gdscript
+if not result["success"]:
+    print("Error: ", inbound_session.get_last_error())
+```
+
+---
+
 ## Data Types
 
 ### Message Types
@@ -453,6 +872,20 @@ Both are base64-encoded strings.
 - Single-use Curve25519 keys for session establishment
 - Base64-encoded strings
 - Identified by unique key IDs
+
+### Megolm Session Keys
+
+Group encryption uses session keys:
+- **Session Key**: Shared by sender to all recipients for creating inbound sessions
+- **Exported Session Key**: Session key exported at a specific message index for late joiners
+- Both are base64-encoded strings
+
+### Message Index
+
+- Integer value tracking the position in the ratchet
+- Starts at 0 and increments with each encrypted message
+- Used for message ordering and detecting gaps
+- Recipients receive the index with each decrypted message
 
 ---
 
@@ -555,6 +988,9 @@ save_to_file(pickle)
 ## See Also
 
 - [Examples](../examples/) - Practical usage examples
-- [Tutorial](TUTORIAL.md) - Step-by-step guide
+  - [basic_encryption.gd](../examples/basic_encryption.gd) - Olm 1:1 encryption
+  - [group_encryption.gd](../examples/group_encryption.gd) - Megolm group encryption
+  - [late_joiner.gd](../examples/late_joiner.gd) - Late joiner scenario
+  - [session_persistence.gd](../examples/session_persistence.gd) - Session persistence
+- [Megolm Tutorial](MEGOLM_TUTORIAL.md) - Group encryption guide
 - [Security Guide](SECURITY.md) - Security best practices
-- [Architecture](ARCHITECTURE.md) - Internal design

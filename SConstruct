@@ -159,6 +159,8 @@ src_files = [
     'src/register_types.cpp',
     'src/vodozemac_account.cpp',
     'src/vodozemac_session.cpp',
+    'src/vodozemac_group_session.cpp',
+    'src/vodozemac_inbound_group_session.cpp',
 ]
 
 env.Execute(Mkdir('addons/godot-vodozemac/bin'))

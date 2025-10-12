@@ -1,11 +1,24 @@
 # Godot-Vodozemac
 
+<p align="center">
+    <img width="512" height="512" alt="image" src="https://github.com/NodotProject/godot-vodozemac/blob/main/docs/web-app-manifest-512x512.png?raw=true" />
+</p>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Godot Engine](https://img.shields.io/badge/Godot-4.5+-blue.svg)](https://godotengine.org/)
 
-**End-to-end encryption for Godot using the Matrix.org Olm protocol**
+**End-to-end encryption for Godot using the Matrix.org Olm & Megolm protocols**
 
 Godot-Vodozemac is a GDExtension that brings battle-tested end-to-end encryption to Godot Engine projects. It wraps the [vodozemac](https://github.com/matrix-org/vodozemac) Rust library (the modern implementation of the Olm/Megolm ratchets used by Matrix) and provides an easy-to-use GDScript API.
+
+## ✨ Features
+
+- ✅ **Olm (1:1 Encryption)** - Secure peer-to-peer messaging with Double Ratchet
+- ✅ **Megolm (Group Encryption)** - Efficient group messaging for 3+ participants
+- ✅ **Session Persistence** - Save and restore encrypted sessions
+- ✅ **Cross-Platform** - Works on Linux, Windows, and macOS
+- ✅ **Memory Safe** - Rust-powered cryptography with automatic memory management
+- ✅ **Well-Tested** - Comprehensive test suite with 25+ integration tests
 
 ## 📋 Requirements
 
@@ -89,19 +102,52 @@ func _ready():
     print("Decrypted: ", bob_inbound["plaintext"])  # "Hello, Bob!"
 ```
 
-See [`examples/`](examples/) for more detailed examples including session persistence.
+### Group Encryption (Megolm)
+
+```gdscript
+extends Node
+
+func _ready():
+    # Alice creates a group session
+    var alice_group = VodozemacGroupSession.new()
+    alice_group.initialize()
+
+    # Get session key to share with members
+    var session_key = alice_group.get_session_key()
+
+    # Bob and Charlie join the group
+    var bob_session = VodozemacInboundGroupSession.new()
+    bob_session.initialize_from_session_key(session_key)
+
+    var charlie_session = VodozemacInboundGroupSession.new()
+    charlie_session.initialize_from_session_key(session_key)
+
+    # Alice sends one message to everyone
+    var encrypted = alice_group.encrypt("Hello everyone!")
+
+    # Both Bob and Charlie decrypt the same ciphertext
+    var bob_msg = bob_session.decrypt(encrypted["ciphertext"])
+    var charlie_msg = charlie_session.decrypt(encrypted["ciphertext"])
+
+    print("Bob received: ", bob_msg["plaintext"])
+    print("Charlie received: ", charlie_msg["plaintext"])
+```
+
+See [`examples/`](examples/) for more detailed examples including session persistence and late joiners.
 
 ## 📚 Documentation
 
 - **[API Reference](docs/API.md)** - Complete API documentation
+- **[Megolm Tutorial](docs/MEGOLM_TUTORIAL.md)** - Group encryption guide with best practices
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│          GDScript (Your Game)           │
-│  VodozemacAccount  │  VodozemacSession │
-└──────────────┬──────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│               GDScript (Your Game)                        │
+│  VodozemacAccount │ VodozemacSession │ VodozemacGroupSession  │
+│                   │                  │ VodozemacInboundGroupSession │
+└──────────────────────┬────────────────────────────────────┘
                │ GDExtension Bindings
 ┌──────────────▼──────────────────────────┐
 │           C++ Wrapper Layer            │
@@ -186,10 +232,19 @@ rm -rf gut_temp
 
 ## 🔐 Security
 
+### General
 - Always verify identity keys out-of-band to prevent MITM attacks
 - Store pickle encryption keys securely (use OS keychain, not plaintext files)
 - Generate new one-time keys regularly and mark used keys as published
 - Use secure random number generators (provided by vodozemac)
+
+### Megolm-Specific
+- **⚠️ Limited Forward Secrecy**: Megolm session keys can decrypt all past and future messages
+- **Rotate Keys Frequently**: Change group session keys every 100-1000 messages or when members leave
+- **Secure Key Distribution**: Always distribute session keys via encrypted Olm 1:1 sessions
+- **Use Olm for Sensitive 1:1**: For highly sensitive conversations, use Olm instead of Megolm
+
+See [Megolm Tutorial](docs/MEGOLM_TUTORIAL.md) for detailed security best practices.
 
 
 ## 🙏 Acknowledgments
