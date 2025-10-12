@@ -74,12 +74,14 @@ func test_session_persistence():
 	group_session.initialize()
 
 	var original_id = group_session.get_session_id()
-	var original_key = group_session.get_session_key()
 
 	# Encrypt some messages
 	group_session.encrypt("Message 1")
 	group_session.encrypt("Message 2")
 	var index_before = group_session.get_message_index()
+
+	# Get session key at current state
+	var key_at_index = group_session.get_session_key()
 
 	# Pickle
 	var pickle = group_session.pickle(key)
@@ -90,7 +92,7 @@ func test_session_persistence():
 	assert_eq(restored_session.from_pickle(pickle, key), OK, "Should restore from pickle")
 
 	assert_eq(restored_session.get_session_id(), original_id, "Session ID should match")
-	assert_eq(restored_session.get_session_key(), original_key, "Session key should match")
+	assert_eq(restored_session.get_session_key(), key_at_index, "Session key should match at same index")
 	assert_eq(restored_session.get_message_index(), index_before, "Message index should be preserved")
 
 func test_pickle_with_wrong_key():

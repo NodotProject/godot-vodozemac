@@ -134,7 +134,7 @@ Dictionary VodozemacSession::decrypt(int message_type, const String& ciphertext)
         auto plaintext_std = std::string(plaintext_rust);
 
         result["success"] = true;
-        result["plaintext"] = String(plaintext_std.c_str());
+        result["plaintext"] = String::utf8(plaintext_std.c_str(), plaintext_std.length());
         last_error = "";
 
     } catch (const std::exception& e) {

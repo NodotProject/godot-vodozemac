@@ -295,12 +295,15 @@ func test_error_invalid_identity_key():
 	var session = alice.create_outbound_session(invalid_key, fake_otk)
 
 	# Should either return null or create an invalid session
-	if session != null:
-		# Try to encrypt with it
-		var result = session.encrypt("test")
-		# Should fail gracefully
-		var error = session.get_last_error()
-		pass  # Just ensuring no crash
+	assert_not_null(session, "Should return a session object even if parameters are invalid")
+
+	# Try to encrypt with it - should fail or have error
+	var result = session.encrypt("test")
+	var error = alice.get_last_error()
+
+	# Either encryption fails or there's an error message
+	var has_error = (not result.get("success", false)) or (error != "")
+	assert_true(has_error, "Should have error when using invalid keys")
 
 # Test 7: Max OTKs Boundary Test
 func test_max_otks_boundary():

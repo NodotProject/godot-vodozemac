@@ -90,12 +90,18 @@ func test_alice_to_bob_exchange():
 
 	assert_eq(inbound["plaintext"], message1, "Bob should decrypt first message")
 
-	# Alice sends second message
+	# Bob sends a message back to confirm the session
+	var bob_message = "Hi Alice!"
+	var bob_encrypt = bob_session.encrypt(bob_message)
+	var alice_decrypt = alice_session.decrypt(bob_encrypt["message_type"], bob_encrypt["ciphertext"])
+	assert_eq(alice_decrypt["plaintext"], bob_message, "Alice should decrypt Bob's message")
+
+	# Alice sends second message - now should be Normal type after session confirmed
 	var message2 = "How are you?"
 	var encrypt2 = alice_session.encrypt(message2)
 
-	# After first message, subsequent messages should be Normal type (1)
-	assert_eq(encrypt2["message_type"], 1, "Second message should be Normal (type 1)")
+	# After session is confirmed (both parties exchanged messages), subsequent messages should be Normal type (1)
+	assert_eq(encrypt2["message_type"], 1, "Second message should be Normal (type 1) after session confirmed")
 
 	# Bob decrypts second message
 	var decrypt2 = bob_session.decrypt(encrypt2["message_type"], encrypt2["ciphertext"])
@@ -235,7 +241,7 @@ func test_decrypt_with_wrong_session():
 	var encrypt_result = charlie_session.encrypt("Message for Charlie")
 
 	# Try to decrypt with Bob's session (should fail)
-	establish_bob_session(0, alice_session.encrypt("Init")[" ciphertext"])
+	establish_bob_session(0, alice_session.encrypt("Init")["ciphertext"])
 
 	var decrypt_result = bob_session.decrypt(
 		encrypt_result["message_type"],

@@ -232,3 +232,6 @@ func test_export_at_invalid_index():
 	# This should either succeed (exporting future state) or fail gracefully
 	if not result["success"]:
 		assert_true(result.has("error"), "Should have error message if export fails")
+	else:
+		assert_true(result.has("exported_key"), "Should have exported_key if export succeeds")
+		assert_true(true, "Export at high index succeeded (implementation allows future state export)")

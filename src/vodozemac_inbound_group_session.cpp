@@ -129,8 +129,9 @@ Dictionary VodozemacInboundGroupSession::decrypt(const String& ciphertext) {
         // Decrypt
         auto decrypted = (*session)->decrypt(*megolm_message);
 
+        auto plaintext_std = std::string(decrypted.plaintext);
         result["success"] = true;
-        result["plaintext"] = String(std::string(decrypted.plaintext).c_str());
+        result["plaintext"] = String::utf8(plaintext_std.c_str(), plaintext_std.length());
         result["message_index"] = static_cast<int64_t>(decrypted.message_index);
         last_error = "";
 

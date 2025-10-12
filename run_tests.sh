@@ -75,7 +75,7 @@ timeout 20s $GODOT_CMD --headless --import || true
 # Our C++ cleanup is fast (verified with minimal standalone test), but GUT adds overhead.
 # Using a 30-second timeout as a workaround - tests typically complete in ~10-15 seconds.
 echo -e "${YELLOW}Running unit tests...${NC}"
-timeout 30s $GODOT_CMD --headless -s addons/gut/gut_cmdln.gd -gdir=test/unit -gexit || {
+timeout 30s $GODOT_CMD --headless -s addons/gut/gut_cmdln.gd -gdir=tests/unit -gexit || {
     EXIT_CODE=$?
     if [ $EXIT_CODE -eq 124 ]; then
         echo -e "${YELLOW}Warning: Tests timed out after 30s (known Godot/GUT cleanup issue)${NC}"
@@ -88,7 +88,7 @@ timeout 30s $GODOT_CMD --headless -s addons/gut/gut_cmdln.gd -gdir=test/unit -ge
 
 # Run integration tests with timeout (they involve network operations)
 echo -e "${YELLOW}Running integration tests...${NC}"
-timeout 20s $GODOT_CMD --headless -s addons/gut/gut_cmdln.gd -gdir=test/integration -gexit || {
+timeout 20s $GODOT_CMD --headless -s addons/gut/gut_cmdln.gd -gdir=tests/integration -gexit || {
     EXIT_CODE=$?
     if [ $EXIT_CODE -eq 124 ]; then
         echo -e "${YELLOW}Integration tests timed out after 20s (expected for network tests)${NC}"
@@ -98,9 +98,9 @@ timeout 20s $GODOT_CMD --headless -s addons/gut/gut_cmdln.gd -gdir=test/integrat
 }
 
 # Run performance tests if they exist
-if [ -d "test/performance" ]; then
+if [ -d "tests/performance" ]; then
     echo -e "${YELLOW}Running performance tests...${NC}"
-    $GODOT_CMD --headless -s addons/gut/gut_cmdln.gd -gdir=test/performance -gexit
+    $GODOT_CMD --headless -s addons/gut/gut_cmdln.gd -gdir=tests/performance -gexit
 fi
 
 echo -e "${GREEN}All tests completed!${NC}"

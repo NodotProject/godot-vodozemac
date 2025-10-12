@@ -289,9 +289,10 @@ Dictionary VodozemacAccount::create_inbound_session(const String& identity_key_b
         // Store session using friend access
         session_ref->_set_session(new rust::Box<olm::Session>(std::move(inbound_result.session)));
 
+        auto plaintext_std = std::string(inbound_result.plaintext);
         result["success"] = true;
         result["session"] = session_ref;
-        result["plaintext"] = String(std::string(inbound_result.plaintext).c_str());
+        result["plaintext"] = String::utf8(plaintext_std.c_str(), plaintext_std.length());
         last_error = "";
 
     } catch (const std::exception& e) {
