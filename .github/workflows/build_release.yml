@@ -183,11 +183,11 @@ jobs:
 
       - name: Create universal binary for vodozemac-ffi
         run: |
-          mkdir -p vodozemac-ffi/cpp/target/release
+          mkdir -p vodozemac-ffi/target/release
           lipo -create \
-            vodozemac-ffi/cpp/target/x86_64-apple-darwin/release/libvodozemac_ffi.a \
-            vodozemac-ffi/cpp/target/aarch64-apple-darwin/release/libvodozemac_ffi.a \
-            -output vodozemac-ffi/cpp/target/release/libvodozemac_ffi.a
+            vodozemac-ffi/cpp/target/x86_64-apple-darwin/release/libvodozemac.a \
+            vodozemac-ffi/cpp/target/aarch64-apple-darwin/release/libvodozemac.a \
+            -output vodozemac-ffi/target/release/libvodozemac.a
 
       - name: Build godot-cpp (x86_64)
         run: |
