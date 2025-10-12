@@ -102,6 +102,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
+            godot-cpp/bin
           key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-scons-
@@ -165,9 +166,10 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
-          key: ${{ runner.os }}-build-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+            godot-cpp/bin
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-build-
+            ${{ runner.os }}-scons-
 
       - name: Install Godot
         uses: chickensoft-games/setup-godot@v2
