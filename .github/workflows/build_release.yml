@@ -25,8 +25,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Checkout vodozemac-ffi submodule
+        run: git submodule update --init --recursive vodozemac-ffi
 
       - name: Setup GDExtension Build Environment
         uses: NodotProject/godot-cpp-builds@v1
@@ -82,8 +83,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Checkout vodozemac-ffi submodule
+        run: git submodule update --init --recursive vodozemac-ffi
 
       - name: Setup GDExtension Build Environment
         uses: NodotProject/godot-cpp-builds@v1
@@ -140,8 +142,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Checkout vodozemac-ffi submodule
+        run: git submodule update --init --recursive vodozemac-ffi
 
       - name: Setup GDExtension Build Environment
         uses: NodotProject/godot-cpp-builds@v1
