@@ -81,6 +81,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup GDExtension Build Environment
+        uses: NodotProject/godot-cpp-builds@v1
+        with:
+          godot-version: '4.5-stable'
+          godot-cpp-path: './godot-cpp'
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -102,8 +108,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
-            godot-cpp/bin
-            godot-cpp/gen
           key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml', 'godot-cpp/**') }}
           restore-keys: |
             ${{ runner.os }}-scons-
@@ -117,13 +121,6 @@ jobs:
         run: |
           mkdir -p vodozemac-ffi/target/cxxbridge
           cp -r vodozemac-ffi/target/release/build/vodozemac-cpp-*/out/cxxbridge/* vodozemac-ffi/target/cxxbridge/ || true
-
-      - name: Build godot-cpp
-        run: |
-          cd godot-cpp
-          scons platform=linux target=template_release -j$(nproc)
-        env:
-          SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
 
       - name: Build GDExtension
         run: |
@@ -158,6 +155,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup GDExtension Build Environment
+        uses: NodotProject/godot-cpp-builds@v1
+        with:
+          godot-version: '4.5-stable'
+          godot-cpp-path: './godot-cpp'
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -182,8 +185,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
-            godot-cpp/bin
-            godot-cpp/gen
           key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml', 'godot-cpp/**') }}
           restore-keys: |
             ${{ runner.os }}-scons-

@@ -119,6 +119,9 @@ env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 # vodozemac-ffi library linking
 if platform == 'windows' and use_mingw:
     vodozemac_lib_path = os.path.join('vodozemac-ffi', 'target', 'x86_64-pc-windows-gnu', 'release', 'libvodozemac.a')
+elif platform == 'windows' and not use_mingw:
+    # MSVC produces vodozemac.lib (without lib prefix)
+    vodozemac_lib_path = os.path.join('vodozemac-ffi', 'target', 'release', 'vodozemac.lib')
 else:
     vodozemac_lib_path = os.path.join('vodozemac-ffi', 'target', 'release', 'libvodozemac.a')
 
@@ -127,6 +130,7 @@ if os.path.exists(vodozemac_lib_path):
     print("Using vodozemac-ffi library:", vodozemac_lib_path)
 else:
     print("ERROR: No vodozemac-ffi library found!")
+    print("Expected path:", vodozemac_lib_path)
     print("Run './build_local.sh' to build the Rust FFI library.")
     Exit(1)
 
