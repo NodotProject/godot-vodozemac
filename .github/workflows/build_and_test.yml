@@ -104,21 +104,26 @@ jobs:
             vodozemac-ffi/target
             godot-cpp/bin
             godot-cpp/gen
-          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml', 'godot-cpp/**') }}
           restore-keys: |
             ${{ runner.os }}-scons-
 
       - name: Build vodozemac-ffi
         run: |
-          cd vodozemac-ffi/cpp
-          cargo build --release
-          cd ../..
+          cd vodozemac-ffi
+          cargo build --release --package vodozemac-cpp
+
+      - name: Copy cxx-generated headers to common location
+        run: |
+          mkdir -p vodozemac-ffi/target/cxxbridge
+          cp -r vodozemac-ffi/target/release/build/vodozemac-cpp-*/out/cxxbridge/* vodozemac-ffi/target/cxxbridge/ || true
 
       - name: Build godot-cpp
         run: |
           cd godot-cpp
           scons platform=linux target=template_release -j$(nproc)
-          cd ..
+        env:
+          SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
 
       - name: Build GDExtension
         run: |
@@ -179,7 +184,7 @@ jobs:
             vodozemac-ffi/target
             godot-cpp/bin
             godot-cpp/gen
-          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml', 'godot-cpp/**') }}
           restore-keys: |
             ${{ runner.os }}-scons-
 

@@ -49,7 +49,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
-          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+            godot-cpp/bin
+            godot-cpp/gen
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml', 'godot-cpp/**') }}
           restore-keys: |
             ${{ runner.os }}-scons-
 
@@ -62,7 +64,8 @@ jobs:
         run: |
           cd godot-cpp
           scons platform=linux target=template_release -j$(nproc)
-          cd ..
+        env:
+          SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
 
       - name: Build GDExtension
         run: |
@@ -107,7 +110,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
-          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+            godot-cpp/bin
+            godot-cpp/gen
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml', 'godot-cpp/**') }}
           restore-keys: |
             ${{ runner.os }}-scons-
 
@@ -120,7 +125,8 @@ jobs:
         run: |
           cd godot-cpp
           scons platform=windows target=template_release
-          cd ..
+        env:
+          SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
 
       - name: Build GDExtension
         run: |
@@ -165,7 +171,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
-          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+            godot-cpp/bin
+            godot-cpp/gen
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml', 'godot-cpp/**') }}
           restore-keys: |
             ${{ runner.os }}-scons-
 
@@ -195,13 +203,15 @@ jobs:
         run: |
           cd godot-cpp
           scons platform=macos target=template_release arch=x86_64
-          cd ..
+        env:
+          SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
 
       - name: Build godot-cpp (arm64)
         run: |
           cd godot-cpp
           scons platform=macos target=template_release arch=arm64
-          cd ..
+        env:
+          SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
 
       - name: Build GDExtension (x86_64)
         run: |
