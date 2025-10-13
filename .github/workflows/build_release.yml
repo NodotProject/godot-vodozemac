@@ -186,6 +186,11 @@ jobs:
             vodozemac-ffi/target/aarch64-apple-darwin/release/libvodozemac.a \
             -output vodozemac-ffi/target/release/libvodozemac.a
 
+      - name: Copy cxx-generated headers to common location
+        run: |
+          mkdir -p vodozemac-ffi/target/cxxbridge
+          cp -r vodozemac-ffi/target/x86_64-apple-darwin/cxxbridge/* vodozemac-ffi/target/cxxbridge/
+
       - name: Build godot-cpp (x86_64)
         run: |
           cd godot-cpp
