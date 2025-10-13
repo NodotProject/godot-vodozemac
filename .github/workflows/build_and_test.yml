@@ -103,6 +103,7 @@ jobs:
             ~/.cargo/git
             vodozemac-ffi/target
             godot-cpp/bin
+            godot-cpp/gen
           key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-scons-
@@ -136,6 +137,7 @@ jobs:
           name: build-dependencies-linux
           path: |
             godot-cpp/bin/
+            godot-cpp/gen/
             vodozemac-ffi/target/release/libvodozemac.a
           retention-days: 7
 
@@ -176,6 +178,7 @@ jobs:
             ~/.cargo/git
             vodozemac-ffi/target
             godot-cpp/bin
+            godot-cpp/gen
           key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-scons-
@@ -202,8 +205,10 @@ jobs:
       - name: Restore build dependencies to correct paths
         run: |
           mkdir -p godot-cpp/bin
+          mkdir -p godot-cpp/gen
           mkdir -p vodozemac-ffi/target/release
-          cp -r build-deps/godot-cpp/bin/* godot-cpp/bin/
+          cp -r build-deps/godot-cpp/bin/* godot-cpp/bin/ || true
+          cp -r build-deps/godot-cpp/gen/* godot-cpp/gen/ || true
           cp build-deps/vodozemac-ffi/target/release/libvodozemac.a vodozemac-ffi/target/release/
 
       - name: Build GDExtension
