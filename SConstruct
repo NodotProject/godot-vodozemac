@@ -182,5 +182,11 @@ print("SHLIBSUFFIX:", env.get('SHLIBSUFFIX'))
 print("Target shared lib will be created as:", env.get('SHLIBPREFIX') + 'godot-vodozemac' + env.get('SHLIBSUFFIX'))
 
 # Create the library directly in the addon directory
-library = env.SharedLibrary(target='addons/godot-vodozemac/bin/libgodot-vodozemac', source=src_files)
+# For macOS with specific arch, include arch in the filename (not for universal)
+if platform == 'macos' and arch != 'universal':
+    library_target = f'addons/godot-vodozemac/bin/libgodot-vodozemac.{arch}'
+else:
+    library_target = 'addons/godot-vodozemac/bin/libgodot-vodozemac'
+
+library = env.SharedLibrary(target=library_target, source=src_files)
 Default(library)
