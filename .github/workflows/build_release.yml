@@ -55,9 +55,8 @@ jobs:
 
       - name: Build vodozemac-ffi
         run: |
-          cd vodozemac-ffi/cpp
-          cargo build --release
-          cd ../..
+          cd vodozemac-ffi
+          cargo build --release --package vodozemac-cpp
 
       - name: Build godot-cpp
         run: |
@@ -114,9 +113,8 @@ jobs:
 
       - name: Build vodozemac-ffi
         run: |
-          cd vodozemac-ffi/cpp
-          cargo build --release
-          cd ../..
+          cd vodozemac-ffi
+          cargo build --release --package vodozemac-cpp
 
       - name: Build godot-cpp
         run: |
@@ -173,20 +171,19 @@ jobs:
 
       - name: Build vodozemac-ffi (x86_64)
         run: |
-          cd vodozemac-ffi/cpp
-          cargo build --release --target x86_64-apple-darwin
+          cd vodozemac-ffi
+          cargo build --release --package vodozemac-cpp --target x86_64-apple-darwin
 
       - name: Build vodozemac-ffi (arm64)
         run: |
-          cd vodozemac-ffi/cpp
-          cargo build --release --target aarch64-apple-darwin
+          cd vodozemac-ffi
+          cargo build --release --package vodozemac-cpp --target aarch64-apple-darwin
 
       - name: Create universal binary for vodozemac-ffi
         run: |
-          mkdir -p vodozemac-ffi/target/release
           lipo -create \
-            vodozemac-ffi/cpp/target/x86_64-apple-darwin/release/libvodozemac.a \
-            vodozemac-ffi/cpp/target/aarch64-apple-darwin/release/libvodozemac.a \
+            vodozemac-ffi/target/x86_64-apple-darwin/release/libvodozemac.a \
+            vodozemac-ffi/target/aarch64-apple-darwin/release/libvodozemac.a \
             -output vodozemac-ffi/target/release/libvodozemac.a
 
       - name: Build godot-cpp (x86_64)
