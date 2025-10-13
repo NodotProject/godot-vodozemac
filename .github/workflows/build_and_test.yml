@@ -154,42 +154,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Checkout vodozemac-ffi submodule
-        run: git submodule update --init --recursive vodozemac-ffi
-
-      - name: Setup GDExtension Build Environment
-        uses: NodotProject/godot-cpp-builds@v1
-        with:
-          godot-version: '4.5-stable'
-          godot-cpp-path: './godot-cpp'
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential scons pkg-config libssl-dev clang \
+          sudo apt-get install -y \
             libx11-dev libxcursor-dev libxinerama-dev libgl1-mesa-dev \
             libglu1-mesa-dev libasound2-dev libpulse-dev libudev-dev \
             libxi-dev libxrandr-dev
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup build cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.workspace }}/.scons-cache/
-            ~/.cargo/registry
-            ~/.cargo/git
-            vodozemac-ffi/target
-          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-scons-
 
       - name: Install Godot
         uses: chickensoft-games/setup-godot@v2
@@ -204,24 +175,11 @@ jobs:
           mv gut_temp/addons/gut addons/
           rm -rf gut_temp
 
-      - name: Download build dependencies
+      - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-dependencies-linux
-          path: build-deps
-
-      - name: Restore build dependencies to correct paths
-        run: |
-          mkdir -p godot-cpp/bin
-          mkdir -p godot-cpp/gen
-          mkdir -p vodozemac-ffi/target/release
-          cp -r build-deps/godot-cpp/bin/* godot-cpp/bin/ || true
-          cp -r build-deps/godot-cpp/gen/* godot-cpp/gen/ || true
-          cp build-deps/vodozemac-ffi/target/release/libvodozemac.a vodozemac-ffi/target/release/
-
-      - name: Build GDExtension
-        run: |
-          scons platform=linux target=template_release -j$(nproc)
+          name: libgodot-vodozemac-linux-x86_64
+          path: addons/godot-vodozemac/bin/
 
       - name: Import project
         run: |
