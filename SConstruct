@@ -97,9 +97,9 @@ else:
 
     # macOS: Add architecture flags for cross-compilation
     if platform == 'macos' and arch != 'universal':
-        arch_flag = f'-arch {arch}'
-        env.Append(CCFLAGS=[arch_flag])
-        env.Append(LINKFLAGS=[arch_flag])
+        # Split -arch and the architecture value into separate list items
+        env.Append(CCFLAGS=['-arch', arch])
+        env.Append(LINKFLAGS=['-arch', arch])
 
 if is_windows and use_mingw:
     # Add Windows-specific defines for MinGW
