@@ -87,9 +87,11 @@ jobs:
       - name: Checkout vodozemac-ffi submodule
         run: git submodule update --init --recursive vodozemac-ffi
 
-      - name: Setup godot-cpp
-        run: |
-          git clone --depth 1 --branch godot-4.5-stable https://github.com/godotengine/godot-cpp godot-cpp
+      - name: Setup GDExtension Build Environment
+        uses: NodotProject/godot-cpp-builds@v1
+        with:
+          godot-version: '4.5-stable'
+          godot-cpp-path: './godot-cpp'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -113,16 +115,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
-            godot-cpp/bin
-          key: ${{ runner.os }}-scons-godot-cpp-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-scons-godot-cpp-
             ${{ runner.os }}-scons-
-
-      - name: Build godot-cpp
-        run: |
-          cd godot-cpp
-          scons platform=windows target=template_release generate_bindings=yes -j$([int]$env:NUMBER_OF_PROCESSORS)
 
       - name: Build vodozemac-ffi
         run: |
@@ -151,9 +146,11 @@ jobs:
       - name: Checkout vodozemac-ffi submodule
         run: git submodule update --init --recursive vodozemac-ffi
 
-      - name: Setup godot-cpp
-        run: |
-          git clone --depth 1 --branch godot-4.5-stable https://github.com/godotengine/godot-cpp godot-cpp
+      - name: Setup GDExtension Build Environment
+        uses: NodotProject/godot-cpp-builds@v1
+        with:
+          godot-version: '4.5-stable'
+          godot-cpp-path: './godot-cpp'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -177,29 +174,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             vodozemac-ffi/target
-            godot-cpp/bin
-          key: ${{ runner.os }}-scons-godot-cpp-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
+          key: ${{ runner.os }}-scons-${{ hashFiles('**/*.cpp', '**/*.h', '**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-scons-godot-cpp-
             ${{ runner.os }}-scons-
-
-      - name: Build godot-cpp (x86_64)
-        run: |
-          cd godot-cpp
-          scons platform=macos target=template_release arch=x86_64 generate_bindings=yes -j$(sysctl -n hw.ncpu)
-
-      - name: Build godot-cpp (arm64)
-        run: |
-          cd godot-cpp
-          scons platform=macos target=template_release arch=arm64 generate_bindings=yes -j$(sysctl -n hw.ncpu)
-
-      - name: Create universal binary for godot-cpp
-        run: |
-          cd godot-cpp
-          lipo -create \
-            bin/libgodot-cpp.macos.template_release.x86_64.a \
-            bin/libgodot-cpp.macos.template_release.arm64.a \
-            -output bin/libgodot-cpp.macos.template_release.universal.a
 
       - name: Build vodozemac-ffi (x86_64)
         run: |
