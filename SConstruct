@@ -65,7 +65,7 @@ if not use_mingw and platform != 'windows':
         '/usr/include',
         '/usr/local/include',
     ])
-elif use_mingw or platform == 'windows':
+elif use_mingw:
     # For Windows cross-compilation, add MinGW-specific paths
     env.Append(CPPPATH=[
         '/usr/x86_64-w64-mingw32/include',
@@ -88,7 +88,7 @@ env.Append(LIBPATH=['godot-cpp/bin', vodozemac_lib_dir])
 is_windows = platform == 'windows'
 if is_windows and not use_mingw:
     # MSVC flags
-    env.Append(CXXFLAGS=['/std:c++17'])
+    env.Append(CXXFLAGS=['/std:c++17', '/EHsc'])
 else:
     # Linux/macOS/MinGW flags
     env.Append(CCFLAGS=['-fPIC'])
@@ -113,7 +113,28 @@ else:
     lib_prefix = 'lib'
 
 # Add godot-cpp library
-godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
+# For macOS, try arch-specific first, then fall back to universal
+if platform == 'macos' and arch != 'universal':
+    arch_specific = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
+    universal = f"{lib_prefix}godot-cpp.{platform}.{target}.universal{lib_ext}"
+
+    arch_specific_path = os.path.join('godot-cpp', 'bin', arch_specific)
+    universal_path = os.path.join('godot-cpp', 'bin', universal)
+
+    if os.path.exists(arch_specific_path):
+        godot_cpp_lib = arch_specific
+        print(f"Using arch-specific godot-cpp library: {arch_specific}")
+    elif os.path.exists(universal_path):
+        godot_cpp_lib = universal
+        print(f"Using universal godot-cpp library: {universal}")
+    else:
+        print(f"ERROR: No suitable godot-cpp library found!")
+        print(f"Tried: {arch_specific_path}")
+        print(f"Tried: {universal_path}")
+        Exit(1)
+else:
+    godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
+
 env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 
 # vodozemac-ffi library linking
