@@ -89,12 +89,8 @@ is_windows = platform == 'windows'
 if is_windows and not use_mingw:
     # MSVC flags
     # /vmg: Use most general pointer-to-member representation (required for godot-cpp compatibility)
-    # /MD: Use dynamic runtime library (matches Rust's default)
-    env.Append(CXXFLAGS=['/std:c++17', '/EHsc', '/vmg', '/MD'])
-    # Linker flags to handle godot-cpp's /MT vs our /MD mismatch
-    # /NODEFAULTLIB:LIBCMT - ignore the static CRT from godot-cpp
-    # Then explicitly link msvcrt.lib (dynamic CRT)
-    env.Append(LINKFLAGS=['/NODEFAULTLIB:LIBCMT'])
+    # /MT: Use static runtime library (matches godot-cpp prebuilts)
+    env.Append(CXXFLAGS=['/std:c++17', '/EHsc', '/vmg', '/MT'])
 else:
     # Linux/macOS/MinGW flags
     env.Append(CCFLAGS=['-fPIC'])

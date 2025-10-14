@@ -123,6 +123,8 @@ jobs:
         run: |
           cd vodozemac-ffi
           cargo build --release --package vodozemac-cpp
+        env:
+          RUSTFLAGS: "-C target-feature=+crt-static"
 
       - name: Build GDExtension
         run: |
