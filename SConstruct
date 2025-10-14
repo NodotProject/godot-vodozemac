@@ -89,7 +89,8 @@ is_windows = platform == 'windows'
 if is_windows and not use_mingw:
     # MSVC flags
     # /vmg: Use most general pointer-to-member representation (required for godot-cpp compatibility)
-    env.Append(CXXFLAGS=['/std:c++17', '/EHsc', '/vmg'])
+    # /MD: Use dynamic runtime library (matches Rust's default and godot-cpp prebuilds)
+    env.Append(CXXFLAGS=['/std:c++17', '/EHsc', '/vmg', '/MD'])
 else:
     # Linux/macOS/MinGW flags
     env.Append(CCFLAGS=['-fPIC'])
