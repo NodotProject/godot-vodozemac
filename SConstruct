@@ -110,11 +110,11 @@ if is_windows and use_mingw:
     # Use static linking to match godot-cpp's default use_static_cpp=True behavior
     env.Append(LINKFLAGS=['-static', '-static-libgcc', '-static-libstdc++'])
 
-# When using MinGW for cross-compilation, we still get .a files with lib prefix
-# .lib files without prefix are only used with MSVC
+# When using MinGW for cross-compilation, we get .a files with lib prefix
+# MSVC .lib files also have lib prefix (from godot-cpp-builds action)
 if is_windows and not use_mingw:
     lib_ext = '.lib'
-    lib_prefix = ''
+    lib_prefix = 'lib'  # godot-cpp-builds uses lib prefix even for MSVC
 else:
     lib_ext = '.a'
     lib_prefix = 'lib'
@@ -141,15 +141,6 @@ if platform == 'macos' and arch != 'universal':
         Exit(1)
 else:
     godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
-
-# Debug: List files in godot-cpp/bin directory
-godot_cpp_bin_dir = os.path.join('godot-cpp', 'bin')
-if os.path.exists(godot_cpp_bin_dir):
-    print(f"Files in {godot_cpp_bin_dir}:")
-    for f in os.listdir(godot_cpp_bin_dir):
-        print(f"  - {f}")
-else:
-    print(f"WARNING: {godot_cpp_bin_dir} does not exist!")
 
 env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 
