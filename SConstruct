@@ -142,6 +142,15 @@ if platform == 'macos' and arch != 'universal':
 else:
     godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
 
+# Debug: List files in godot-cpp/bin directory
+godot_cpp_bin_dir = os.path.join('godot-cpp', 'bin')
+if os.path.exists(godot_cpp_bin_dir):
+    print(f"Files in {godot_cpp_bin_dir}:")
+    for f in os.listdir(godot_cpp_bin_dir):
+        print(f"  - {f}")
+else:
+    print(f"WARNING: {godot_cpp_bin_dir} does not exist!")
+
 env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 
 # vodozemac-ffi library linking
