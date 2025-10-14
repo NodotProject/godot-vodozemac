@@ -88,7 +88,8 @@ env.Append(LIBPATH=['godot-cpp/bin', vodozemac_lib_dir])
 is_windows = platform == 'windows'
 if is_windows and not use_mingw:
     # MSVC flags
-    env.Append(CXXFLAGS=['/std:c++17', '/EHsc'])
+    # /vmg: Use most general pointer-to-member representation (required for godot-cpp compatibility)
+    env.Append(CXXFLAGS=['/std:c++17', '/EHsc', '/vmg'])
 else:
     # Linux/macOS/MinGW flags
     env.Append(CCFLAGS=['-fPIC'])
@@ -208,10 +209,16 @@ print("Target shared lib will be created as:", env.get('SHLIBPREFIX') + 'godot-v
 
 # Create the library directly in the addon directory
 # For macOS with specific arch, include arch in the filename (not for universal)
+# NOTE: SCons adds SHLIBPREFIX (lib) and SHLIBSUFFIX (.dylib/.so/.dll) automatically
+# BUT: If the target contains a dot, SCons treats everything after the last dot as an extension
+# So we must NOT include the 'lib' prefix AND we need to work around the dot issue
 if platform == 'macos' and arch != 'universal':
-    library_target = f'addons/godot-vodozemac/bin/libgodot-vodozemac.{arch}'
+    # For arch-specific builds, we want: libgodot-vodozemac.{arch}.dylib
+    # We override SHLIBSUFFIX to include the arch to work around SCons' extension detection
+    env['SHLIBSUFFIX'] = f'.{arch}.dylib'
+    library_target = 'addons/godot-vodozemac/bin/godot-vodozemac'
 else:
-    library_target = 'addons/godot-vodozemac/bin/libgodot-vodozemac'
+    library_target = 'addons/godot-vodozemac/bin/godot-vodozemac'
 
 library = env.SharedLibrary(target=library_target, source=src_files)
 Default(library)
