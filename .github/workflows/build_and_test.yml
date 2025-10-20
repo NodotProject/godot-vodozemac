@@ -95,6 +95,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          echo "set man-db/auto-update false" | sudo debconf-communicate
+          sudo dpkg-reconfigure man-db
           sudo apt-get update
           sudo apt-get install -y build-essential scons pkg-config libssl-dev clang
 
@@ -156,6 +158,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          echo "set man-db/auto-update false" | sudo debconf-communicate
+          sudo dpkg-reconfigure man-db
           sudo apt-get update
           sudo apt-get install -y \
             libx11-dev libxcursor-dev libxinerama-dev libgl1-mesa-dev \
@@ -213,6 +217,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          echo "set man-db/auto-update false" | sudo debconf-communicate
+          sudo dpkg-reconfigure man-db
           sudo apt-get update
           sudo apt-get install -y valgrind build-essential scons pkg-config libssl-dev clang
 
